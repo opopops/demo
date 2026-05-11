@@ -1,0 +1,19 @@
+name: CI - app
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - apps/app/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  app:
+    uses: ./.github/workflows/ci.yaml
+    with:
+      app: app

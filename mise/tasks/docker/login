@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+#MISE description="Authenticate to the Docker Registry (alias: d:login)"
+#MISE alias=['d:login']
+#MISE dir="{{ cwd }}"
+#MISE quiet=true
+#MISE raw=true
+
+#USAGE arg "<registry>" env="OCI_REGISTRY" help="OCI Registry host"
+#USAGE flag "-u --username <username>" env="GITHUB_ACTOR" help="Username"
+#USAGE flag "-p --password <password>" env="GITHUB_TOKEN" help="Password"
+#USAGE flag "-x" default=#false help="Enable Debug mode"
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$usage_x" == "true" ]] && set -x
+
+echo $usage_password | docker login --username=${usage_username} --password-stdin ${usage_registry}

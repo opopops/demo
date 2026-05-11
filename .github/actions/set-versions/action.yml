@@ -1,0 +1,71 @@
+name: Set Versions
+description: Set the versions
+
+inputs:
+  tag-prefix:
+    description: "Prefix stripped from the git tag name (after refs/tags/...); e.g. v for tag v1.2.3"
+    required: false
+    default: "v"
+
+outputs:
+  sha:
+    description: "The Git SHA"
+    value: ${{ steps.sha.outputs.sha }}
+  short-sha:
+    description: "The Git short SHA"
+    value: ${{ steps.sha.outputs.short-sha }}
+  version:
+    description: "Semantic or PR-style version (pr-<number> on pull_request)"
+    value: ${{ steps.version.outputs.version }}
+  version-sha:
+    description: "Version with short SHA (e.g. pr-42-abc1234 or 1.2.3-abc1234)"
+    value: ${{ steps.version.outputs.version-sha }}
+  core-version:
+    description: "Core version (semver prefix without last suffix segment; on PR, same as version)"
+    value: ${{ steps.version.outputs.core-version }}
+  semver-version:
+    description: "Semver version (semver prefix without last suffix segment; on PR, same as version)"
+    value: ${{ steps.version.outputs.semver-version }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: sha
+      run: |
+        SHA=${{ github.event.pull_request.head.sha || github.sha }}
+        SHORT_SHA=$(echo $SHA | cut -c1-7)
+        echo "SHA: $SHA"
+        echo "SHORT_SHA: $SHORT_SHA"
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+    - shell: bash
+      id: version
+      env:
+        TAG_PREFIX: ${{ inputs.tag-prefix }}
+      run: |
+        set -euo pipefail
+        SHORT_SHA="${{ steps.sha.outputs.short-sha }}"
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          VERSION="0.0.0-pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
+          SEMVER_VERSION=${VERSION}
+          CORE_VERSION=${VERSION%-*}
+          OUT_VERSION="$VERSION"
+          OUT_VERSION_SHA="${VERSION}"
+          OUT_CORE_VERSION="${CORE_VERSION}"
+          OUT_SEMVER_VERSION="$SEMVER_VERSION"
+        else
+          RAW_VERSION=${GITHUB_REF##*/}
+          VERSION=${RAW_VERSION#"$TAG_PREFIX/v"}
+          SEMVER_VERSION=${VERSION#v}
+          CORE_VERSION=${VERSION%-*}
+          OUT_VERSION="$VERSION"
+          OUT_VERSION_SHA="${VERSION}-${SHORT_SHA}"
+          OUT_CORE_VERSION="$CORE_VERSION"
+          OUT_SEMVER_VERSION="$SEMVER_VERSION"
+        fi
+        echo "version=$OUT_VERSION" >> "$GITHUB_OUTPUT"
+        echo "version-sha=$OUT_VERSION_SHA" >> "$GITHUB_OUTPUT"
+        echo "core-version=$OUT_CORE_VERSION" >> "$GITHUB_OUTPUT"
+        echo "semver-version=$OUT_SEMVER_VERSION" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        required: true
+        description: Path to the App directory.
+
+concurrency:
+  group: chart-push-${{ github.workflow }}-${{ inputs.app }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: apps/${{ inputs.app }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: jdx/mise-action@v4
+        with:
+          log_level: info
+
+      - name: Login to Registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          mise run docker:login \
+            --username=${{ github.actor }} \
+            --password=${{ github.token }}
+
+      - uses: ./.github/actions/set-versions
+        id: version
+
+      - name: Push Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          mise run docker:build \
+            --push \
+            --tag=ghcr.io/opopops/demo/${{ inputs.app }}:${{ steps.version.outputs.version }}
+
+      - name: Push Helm chart
+        shell: bash
+        run: |
+          set -euo pipefail
+          mise run helm:package \
+            --push \
+            --version=${{ steps.version.outputs.semver-version }} \
+            --app-version=${{ steps.version.outputs.version }} \
+            charts/${{ inputs.app }} \
+            oci://ghcr.io/opopops/demo/helm
