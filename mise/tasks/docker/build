@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+#MISE description="Build multui-arch docker image using BuildX (alias: d:build)"
+#MISE alias=['d:build']
+#MISE dir="{{ cwd }}"
+#MISE quiet=true
+
+#USAGE arg "<context>" default="." help="Context path"
+#USAGE flag "-f --file <file>" default="Dockerfile" help="Name of the Dockerfile"
+#USAGE flag "-t --tag <tag>" required=#true help="Name and optionally a tag (format: 'name:tag')"
+#USAGE flag "--build-arg <build-arg>" var=#true help="Set build-time variables"
+#USAGE flag "--secret <secret>" var=#true help="Secret to expose to the build"
+#USAGE flag "--platform <platform>" var=#true help="Specify platforms (By default, use host platform)"
+#USAGE flag "--target <target>" default="" help="Build the specified Dockerfile target"
+#USAGE flag "--builder <builder>" default="mise" help="Builder name"
+#USAGE flag "--cache-from <cache-from>" default="" help="External cache sources"
+#USAGE flag "--cache-to <cache-to>" default="" help="Cache export destinations"
+#USAGE flag "--cache-size <cache-size>" env="DOCKER_BUILDX_CACHE_SIZE" default="10" help="Builder cache size in GB"
+#USAGE flag "--pull" default=#false help="Always attempt to pull all referenced images"
+#USAGE flag "--push" default=#false help="Publish docker image to the registry"
+#USAGE flag "--provenance" default=#false help="Attest provenance"
+#USAGE flag "--sbom" default=#false help="Publish SBOM"
+#USAGE flag "-x" default=#false help="Enable Debug mode"
+
+set -euo pipefail
+
+[[ "$usage_x" == "true" ]] && set -x
+
+ARCH=$(uname -m)
+
+BUILDX_BUILDER="${usage_builder}"
+# Keep 10GB of storage max
+BUILDX_CACHE_SIZE=$((${usage_cache_size} * 1024 * 1024 * 1024))
+DOCKER_BUILD_ARGS=""
+
+for build_arg in ${usage_build_arg:-}; do
+  DOCKER_BUILD_ARGS+=" --build-arg=${build_arg}"
+done
+
+for secret in ${usage_secret:-}; do
+  DOCKER_BUILD_ARGS+=" --secret=${secret}"
+done
+
+if [[ -n "${usage_platform:-}" ]]; then
+  for platform in ${usage_platform}; do
+    DOCKER_BUILD_ARGS+=" --platform=${platform}"
+  done
+else
+  usage_platform="linux/${ARCH/x86_64/amd64}"
+fi
+
+if [[ -n "${usage_target}" ]]; then
+  DOCKER_BUILD_ARGS+=" --target=${usage_target}"
+fi
+
+if [[ -n "${usage_cache_from}" ]]; then
+  DOCKER_BUILD_ARGS+=" --cache-from=${usage_cache_from}"
+fi
+
+if [[ -n "${usage_cache_to}" ]]; then
+  DOCKER_BUILD_ARGS+=" --cache-to=${usage_cache_to}"
+fi
+
+if [[ "${usage_push}" == "true" ]]; then
+  DOCKER_BUILD_ARGS+=" --push"
+else
+  DOCKER_BUILD_ARGS+=" --load"
+fi
+
+# Check if the builder already exists
+if ! docker-buildx inspect "$BUILDX_BUILDER" >/dev/null 2>&1; then
+  docker-buildx create \
+    --name="$BUILDX_BUILDER" \
+    --driver=docker-container \
+    --bootstrap \
+    --driver-opt="env.BUILDKITD_FLAGS=--oci-worker-gc-keepstorage=$BUILDX_CACHE_SIZE"
+fi
+
+docker-buildx build \
+  --builder="$BUILDX_BUILDER" \
+  --file=${usage_file} \
+  --pull=${usage_pull} \
+  --sbom=${usage_sbom} \
+  --provenance=${usage_provenance} \
+  --tag=${usage_tag} ${DOCKER_BUILD_ARGS} ${usage_context}

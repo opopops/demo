@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+#MISE description="Package Helm chart (alias: h:package)"
+#MISE alias=['h:package']
+#MISE dir="{{ cwd }}"
+#MISE quiet=true
+
+#USAGE arg "<chart>" default="." help="Chart name"
+#USAGE arg "<registry>" env="HELM_OCI_REGISTRY_URL" default="" help="Registry where the chart will be pushed"
+#USAGE flag "--version <version>" default="" help="Set the version on the chart to this semver version"
+#USAGE flag "--app-version <version>" default="" help="Set the appVersion on the chart to this version"
+#USAGE flag "--image-registry <registry>" default="" help="Overrides image registry in default values"
+#USAGE flag "--image-repository <repository>" default="" help="Overrides image repository in default values"
+#USAGE flag "--dependency-update" default=#true help="Update dependencies from 'Chart.yaml' to dir 'charts/' before packaging"
+#USAGE flag "-d --destination <destination>" default="." help="Location to write the chart. (default '.')"
+#USAGE flag "--push" default=#false help="publish Helm chart"
+#USAGE flag "-x" default=#false help="Enable Debug mode"
+
+set -euo pipefail
+
+[[ "$usage_x" == "true" ]] && set -x
+
+CHART_NAME="$(yq '.name' ${usage_chart}/Chart.yaml)"
+CHART_VERSION="$(yq '.version' ${usage_chart}/Chart.yaml)"
+CHART_APP_VERSION="$(yq '.appVersion' ${usage_chart}/Chart.yaml)"
+
+HELM_ARGS=""
+
+if [[ -n "${usage_version}" ]]; then
+  CHART_VERSION=${usage_version}
+  HELM_ARGS+=" --version=${usage_version}"
+fi
+
+if [[ -n "${usage_app_version}" ]]; then
+  CHART_APP_VERSION=${usage_app_version}
+  HELM_ARGS+=" --app-version=${usage_app_version}"
+fi
+
+if [[ -n "${usage_image_registry}" ]]; then
+  yq -i ".image.registry = \"${usage_image_registry}\"" ${usage_chart}/values.yaml
+fi
+
+if [[ -n "${usage_image_repository}" ]]; then
+  yq -i ".image.repository = \"${usage_image_repository}\"" ${usage_chart}/values.yaml
+fi
+
+CHART_TARBALL="${CHART_NAME}-${CHART_VERSION}.tgz"
+
+helm package ${usage_chart} \
+  --destination="${usage_destination}" \
+  --dependency-update=${usage_dependency_update} \
+  ${HELM_ARGS}
+
+if [[ "${usage_push}" == "true" ]]; then
+  if [[ -z "${usage_registry}" ]]; then
+    echo "ERROR: you need to specify a registry host: oci://<registry>"
+    exit 1
+  fi
+  helm push ${usage_destination}/${CHART_TARBALL} ${usage_registry}
+fi

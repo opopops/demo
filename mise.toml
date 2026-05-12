@@ -1,0 +1,15 @@
+[settings]
+experimental = true
+
+[env]
+OCI_REGISTRY = { value = "ghcr.io/opopops/demo" }
+HELM_OCI_REGISTRY_URL = { value = "oci://{{ env.OCI_REGISTRY }}/helm" }
+
+[tools]
+docker-cli = { version = "latest" }
+helm  = { version = "4" }
+kubectl = { version = "latest" }
+yq = { version = "latest" }
+
+# GiHub Tools: https://mise.jdx.dev/dev-tools/backends/github.html#github-backend
+"github:docker/buildx" = { version = "latest" , bin = "docker-buildx" }

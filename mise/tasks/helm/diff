@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+#MISE description="Run Helm diff (alias: h:diff)"
+#MISE alias=['h:diff']
+#MISE dir="{{ cwd }}"
+#MISE quiet=true
+
+#USAGE arg "<release>" env="HELM_RELEASE" help="Release name"
+#USAGE arg "<chart>" default="." help="Chart"
+#USAGE flag "--kube-context <kube_context>" env="HELM_KUBE_CONTEXT" default="" help="Kube context"
+#USAGE flag "-n --namespace <namespace>" env="HELM_NAMESPACE" default="" help="Cluster Namespace"
+#USAGE flag "-f --values <path>" env="HELM_VALUES" default="values-local.yaml" help="Values file"
+#USAGE flag "-v --version <version>" env="HELM_CHART_VERSION" default="" help="Chart version"
+#USAGE flag "--devel" default=#true help="Use development versions, too"
+#USAGE flag "--no-hooks" default=#true help="disable diffing of hooks (default: true)"
+#USAGE flag "--take-ownership" default=#false help="If set, upgrade will ignore the check for helm annotations and take ownership"
+#USAGE flag "-x" default=#false help="Enable Debug mode"
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$usage_x" == "true" ]] && set -x
+
+HELM_ARGS=""
+
+if [[ -n "${usage_kube_context}" ]]; then
+  HELM_ARGS+=" --kube-context=${usage_kube_context}"
+fi
+
+if [[ -s "${usage_values}" ]]; then
+  HELM_ARGS+=" --values=${usage_values}"
+fi
+
+if [[ -n "${usage_version}" ]]; then
+  HELM_ARGS+=" --version=${usage_version}"
+fi
+
+helm diff upgrade --install \
+  --kube-context=${usage_kube_context} \
+  --reset-values \
+  --dry-run=server \
+  --namespace=${usage_namespace} \
+  --no-hooks="${usage_no_hooks}" \
+  --devel="${usage_devel}" \
+  --take-ownership="${usage_take_ownership}" \
+  ${HELM_ARGS} ${usage_release} ${usage_chart}

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+#MISE description="Lint Helm chart (alias: h:lint)"
+#MISE alias=['h:lint']
+#MISE dir="{{ cwd }}"
+#MISE quiet=true
+
+#USAGE arg "<chart>" default="." help="Chart"
+#USAGE flag "-x" default=#false help="Enable Debug mode"
+
+set -euo pipefail
+
+[[ "$usage_x" == "true" ]] && set -x
+
+helm lint ${usage_chart} \
+  --strict
