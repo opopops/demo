@@ -1,0 +1,39 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: demo
+  namespace: flux
+spec:
+  inputs:
+    - app: "app"
+      dependsOn: ""
+  resourcesTemplate: |
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: GitRepository
+    metadata:
+      name: demo
+      namespace: flux
+    spec:
+      interval: 1m
+      url: https://github.com/opopops/demo
+      ref:
+        branch: feature/values
+      # secretRef:
+      #   name: github-auth
+    ---
+    apiVersion: kustomize.toolkit.fluxcd.io/v1
+    kind: Kustomization
+    metadata:
+      name: demo-<< inputs.app >>
+      namespace: flux
+    spec:
+      << if inputs.dependsOn >>
+      dependsOn:
+        - name: demo-<< inputs.dependsOn >>
+      << end >>
+      interval: 5m
+      path: "./apps/<< inputs.app >>/deploy"
+      prune: true
+      sourceRef:
+        kind: GitRepository
+        name: demo
