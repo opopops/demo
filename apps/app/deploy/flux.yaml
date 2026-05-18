@@ -1,11 +1,11 @@
 apiVersion: fluxcd.controlplane.io/v1
 kind: ResourceSet
 metadata:
-  name: app
+  name: demo-app
   namespace: flux
   annotations:
     fluxcd.controlplane.io/reconcile: "enabled"
-    fluxcd.controlplane.io/reconcileEvery: "30m"
+    fluxcd.controlplane.io/reconcileEvery: "10m"
     fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
   commonMetadata:
@@ -57,7 +57,7 @@ spec:
           secretRef:
             name: << inputs.cluster >>-kubeconfig
         interval: 30m
-        releaseName: app-<< inputs.variant >>
+        releaseName: demo-app-<< inputs.variant >>
         storageNamespace: default
         targetNamespace: default
         install:
@@ -80,7 +80,7 @@ spec:
           name: app-<< inputs.variant >>
         valuesFrom:
           - kind: ConfigMap
-            name: app-values-<< inputs.variant >>
-            optional: true
+            name: demo-app-values
           - kind: ConfigMap
-            name: app-values
+            name: demo-app-values-<< inputs.variant >>
+            optional: true

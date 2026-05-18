@@ -3,6 +3,10 @@ kind: ResourceSet
 metadata:
   name: demo
   namespace: flux
+  annotations:
+    fluxcd.controlplane.io/reconcile: "enabled"
+    fluxcd.controlplane.io/reconcileEvery: "10m"
+    fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
   inputs:
     - app: "app"
