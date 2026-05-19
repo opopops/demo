@@ -1,0 +1,3 @@
+hostname: app.gladia-eu-200.gladia.io
+
+replicaCount: 1

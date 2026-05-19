@@ -1,11 +1,11 @@
 apiVersion: fluxcd.controlplane.io/v1
 kind: ResourceSet
 metadata:
-  name: app
+  name: demo-app
   namespace: flux
   annotations:
     fluxcd.controlplane.io/reconcile: "enabled"
-    fluxcd.controlplane.io/reconcileEvery: "30m"
+    fluxcd.controlplane.io/reconcileEvery: "10m"
     fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
   commonMetadata:
@@ -16,17 +16,37 @@ spec:
       environment: "staging"
       variant: "blue"
       version: ">=0.0.0-0"
+    - cluster: "gladia-eu-200"
+      environment: "staging"
+      variant: "green"
+      version: ">=0.0.0-0"
   resources:
     - apiVersion: source.toolkit.fluxcd.io/v1
-      kind: OCIRepository
+      kind: HelmRepository
+      metadata:
+        name: demo
+        namespace: << inputs.cluster >>
+      spec:
+        type: "oci"
+        interval: 1m
+        url: oci://ghcr.io/opopops/demo/helm
+    - apiVersion: source.toolkit.fluxcd.io/v1
+      kind: HelmChart
       metadata:
         name: app-<< inputs.variant >>
         namespace: << inputs.cluster >>
       spec:
-        interval: 5m
-        url: oci://ghcr.io/opopops/demo/helm/app
-        ref:
-          semver: << inputs.version | quote >>
+        interval: 1m
+        chart: app
+        ignoreMissingValuesFiles: false
+        valuesFiles:
+          - values.yaml
+          # - values-<< inputs.environment >>.yaml
+        reconcileStrategy: ChartVersion
+        sourceRef:
+          kind: HelmRepository
+          name: demo
+        version: "<< inputs.version | quote >>"
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       metadata:
@@ -37,7 +57,7 @@ spec:
           secretRef:
             name: << inputs.cluster >>-kubeconfig
         interval: 30m
-        releaseName: app-<< inputs.variant >>
+        releaseName: demo-app-<< inputs.variant >>
         storageNamespace: default
         targetNamespace: default
         install:
@@ -56,7 +76,11 @@ spec:
               target:
                 kind: Deployment
         chartRef:
-          kind: OCIRepository
+          kind: HelmChart
           name: app-<< inputs.variant >>
-        values:
-          replicaCount: 1
+        valuesFrom:
+          - kind: ConfigMap
+            name: demo-app-values
+          - kind: ConfigMap
+            name: demo-app-values-<< inputs.variant >>
+            optional: true

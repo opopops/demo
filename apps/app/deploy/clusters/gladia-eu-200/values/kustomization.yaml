@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gladia-eu-200
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+
+configMapGenerator:
+  - name: demo-app-values
+    files:
+      - values.yaml=app/values.yaml
+  - name: demo-app-values-blue
+    files:
+      - values.yaml=app/values-blue.yaml
+  - name: demo-app-values-green
+    files:
+      - values.yaml=app/values-green.yaml
