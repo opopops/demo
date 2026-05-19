@@ -21,7 +21,7 @@ spec:
       interval: 1m
       url: https://github.com/opopops/demo
       ref:
-        branch: feature/values
+        branch: main
       # secretRef:
       #   name: github-auth
     ---
