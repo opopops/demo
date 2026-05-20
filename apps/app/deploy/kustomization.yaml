@@ -3,5 +3,5 @@ kind: Kustomization
 
 resources:
   - clusters/staging/gladia-eu-200
-  - input-providers.yaml
+  - clusters/prod/method-us-13
   - flux.yaml
