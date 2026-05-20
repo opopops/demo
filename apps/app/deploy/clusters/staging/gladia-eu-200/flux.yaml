@@ -5,6 +5,7 @@ metadata:
   namespace: flux
   labels:
     app.kubernetes.io/name: app
+    app.kubernetes.io/part-of: demo
   annotations:
     fluxcd.controlplane.io/reconcile: "enabled"
     fluxcd.controlplane.io/reconcileEvery: "10m"
@@ -23,6 +24,7 @@ metadata:
   namespace: flux
   labels:
     app.kubernetes.io/name: app
+    app.kubernetes.io/part-of: demo
   annotations:
     fluxcd.controlplane.io/reconcile: "enabled"
     fluxcd.controlplane.io/reconcileEvery: "10m"

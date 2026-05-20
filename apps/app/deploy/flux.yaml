@@ -11,11 +11,13 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: app
+      app.kubernetes.io/part-of: demo
   inputsFrom:
     - kind: ResourceSetInputProvider
       selector:
         matchLabels:
           app.kubernetes.io/name: app
+          app.kubernetes.io/part-of: demo
   resources:
     - apiVersion: source.toolkit.fluxcd.io/v1
       kind: HelmRepository
