@@ -3,4 +3,4 @@ kind: Kustomization
 
 resources:
   - values
-  - input-providers.yaml
+  - flux.yaml
