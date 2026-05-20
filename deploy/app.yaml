@@ -1,0 +1,16 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: demo-app
+  namespace: flux
+  labels:
+    app.kubernetes.io/part-of: demo
+    app.kubernetes.io/component: app-registration
+  annotations:
+    fluxcd.controlplane.io/reconcile: "enabled"
+    fluxcd.controlplane.io/reconcileEvery: "10m"
+spec:
+  type: Static
+  defaultValues:
+    app: app
+    dependsOn: ""

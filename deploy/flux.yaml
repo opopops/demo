@@ -8,9 +8,12 @@ metadata:
     fluxcd.controlplane.io/reconcileEvery: "10m"
     fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
-  inputs:
-    - app: "app"
-      dependsOn: ""
+  inputsFrom:
+    - kind: ResourceSetInputProvider
+      selector:
+        matchLabels:
+          app.kubernetes.io/part-of: demo
+          app.kubernetes.io/component: app-registration
   resourcesTemplate: |
     apiVersion: source.toolkit.fluxcd.io/v1
     kind: GitRepository
